@@ -28,18 +28,21 @@ const (
 
 type bwCtxValue struct {
 	sync.RWMutex
-	kvs map[string]string
+	kvs []kv
 }
 
 func newBackwardCtxValues() *bwCtxValue {
-	return &bwCtxValue{
-		kvs: make(map[string]string),
-	}
+	return &bwCtxValue{}
 }
 
 func (p *bwCtxValue) get(k string) (v string, ok bool) {
 	p.RLock()
-	v, ok = p.kvs[k]
+	for _, kv := range p.kvs {
+		if kv.key == k {
+			v, ok = kv.val, true
+			break
+		}
+	}
 	p.RUnlock()
 	return
 }
@@ -48,8 +51,8 @@ func (p *bwCtxValue) getAll() (m map[string]string) {
 	p.RLock()
 	if cnt := len(p.kvs); cnt > 0 {
 		m = make(map[string]string, cnt)
-		for k, v := range p.kvs {
-			m[k] = v
+		for _, kv := range p.kvs {
+			m[kv.key] = kv.val
 		}
 	}
 	p.RUnlock()
@@ -58,14 +61,23 @@ func (p *bwCtxValue) getAll() (m map[string]string) {
 
 func (p *bwCtxValue) set(k, v string) {
 	p.Lock()
-	p.kvs[k] = v
+	if idx, ok := search(p.kvs, k); ok {
+		p.kvs[idx].val = v
+	} else {
+		p.kvs = append(p.kvs, kv{k, v})
+	}
 	p.Unlock()
 }
 
 func (p *bwCtxValue) setMany(kvs []string) {
 	p.Lock()
 	for i := 0; i < len(kvs); i += 2 {
-		p.kvs[kvs[i]] = kvs[i+1]
+		k, v := kvs[i], kvs[i+1]
+		if idx, ok := search(p.kvs, k); ok {
+			p.kvs[idx].val = v
+		} else {
+			p.kvs = append(p.kvs, kv{k, v})
+		}
 	}
 	p.Unlock()
 }
@@ -73,7 +85,11 @@ func (p *bwCtxValue) setMany(kvs []string) {
 func (p *bwCtxValue) setMap(kvs map[string]string) {
 	p.Lock()
 	for k, v := range kvs {
-		p.kvs[k] = v
+		if idx, ok := search(p.kvs, k); ok {
+			p.kvs[idx].val = v
+		} else {
+			p.kvs = append(p.kvs, kv{k, v})
+		}
 	}
 	p.Unlock()
 }
