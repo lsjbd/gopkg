@@ -162,7 +162,7 @@ func BenchmarkFromHTTPHeader(b *testing.B) {
 
 func BenchmarkToHTTPHeader(b *testing.B) {
 	for _, cnt := range []int{10, 20, 50, 100} {
-		ctx, _, _ := initMetaInfo(cnt)
+		ctx, _, _, _, _ := initMetaInfo(cnt)
 		fun := fmt.Sprintf("ToHTTPHeader-%d", cnt)
 		b.Run(fun, func(b *testing.B) {
 			hd := make(metainfo.HTTPHeader)

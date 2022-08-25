@@ -22,14 +22,14 @@ import (
 	"github.com/bytedance/gopkg/cloud/metainfo"
 )
 
-func calls(ctx context.Context, level int, t *testing.T, expect bool) {
+func calls(ctx context.Context, level int, tb testing.TB, expect bool) {
 	k := fmt.Sprintf("key-%d", level)
 	v := fmt.Sprintf("val-%d", level)
 	b := metainfo.SetBackwardValue(ctx, k, v)
-	assert(t, expect == b, "expect", expect, "got", b)
+	assert(tb, expect == b, "expect", expect, "got", b)
 
 	if level > 0 {
-		calls(ctx, level-1, t, expect)
+		calls(ctx, level-1, tb, expect)
 	}
 }
 
